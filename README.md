@@ -1,6 +1,4 @@
-# PetChain: A Blockchain-Based Pet Adoption & Ownership Management System
-
-> **B.Tech CSE Blockchain Mini Project | Presidency University | Academic Year 2026–27**
+> **Blockchain Pet Adoption & Ownership Management System**
 
 PetChain is a full-stack decentralized application (dApp) built on Ethereum smart contracts to bring transparency, immutability, and trust to pet adoption lifecycles, ownership history tracking, and medical vaccination records.
 
@@ -128,8 +126,7 @@ PetChain/
 
 ---
 
-## Academic Team
+## Project Team
 
-- **Institution**: Presidency University
 - **Program**: B.Tech Computer Science & Engineering
-- **Academic Year**: 2026–2027
+- **Project**: PetChain Blockchain DApp

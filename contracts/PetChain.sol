@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 /**
  * @title PetChain
  * @notice Smart contract for pet registration, adoption management, vaccination records, and ownership history tracking.
- * @dev Academic Project for B.Tech CSE - Presidency University (2026-27).
+ * @dev Decentralized Pet Adoption & Ownership Management System.
  */
 contract PetChain {
     address public admin;

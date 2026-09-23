@@ -18,7 +18,7 @@
     "pet-adoption",
     "smart-contract"
   ],
-  "author": "Presidency University B.Tech CSE Team",
+  "author": "PetChain Development Team",
   "license": "MIT",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

@@ -280,7 +280,7 @@ export default function App() {
       />
 
       <footer className="footer">
-        <p>© 2026 PetChain. Academic B.Tech CSE Mini Project | Presidency University.</p>
+        <p>© 2026 PetChain. Blockchain Pet Adoption & Ownership System.</p>
         <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
           Powered by Ethereum Smart Contracts • Hardhat Local Network (Chain ID: 31337)
         </p>
