@@ -8,6 +8,22 @@ export const HARDHAT_RPC_URL = 'http://127.0.0.1:8545';
 export const CONTRACT_ADDRESS = contractAddressData?.PetChain || '0x5FbDB2315678afecb367f032d93F642f64180aa3';
 export const CONTRACT_ABI = contractArtifact?.abi || [];
 
+// Standard Hardhat Test Private Keys for Demo Mode
+export const DEMO_KEYS = {
+  admin: '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',  // Account #0 (0xf39F...92266)
+  adopter: '0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d' // Account #1 (0x7099...79C8)
+};
+
+let activeDemoRole = null; // null | 'admin' | 'adopter'
+
+export function setDemoWalletRole(role) {
+  activeDemoRole = role;
+}
+
+export function getDemoWalletRole() {
+  return activeDemoRole;
+}
+
 /**
  * Creates a read-only ethers Provider (fallback to local Hardhat node)
  */
@@ -27,11 +43,19 @@ export function getReadOnlyContract() {
 }
 
 /**
- * Returns contract instance bound to current MetaMask Signer
+ * Returns contract instance bound to current Signer (MetaMask or Demo Wallet)
  */
 export async function getSignerContract() {
+  // 1. If Demo Wallet Role is active
+  if (activeDemoRole && DEMO_KEYS[activeDemoRole]) {
+    const provider = new ethers.JsonRpcProvider(HARDHAT_RPC_URL);
+    const wallet = new ethers.Wallet(DEMO_KEYS[activeDemoRole], provider);
+    return new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+  }
+
+  // 2. Browser MetaMask
   if (!window.ethereum) {
-    throw new Error('MetaMask is not installed. Please install the MetaMask extension to execute transactions.');
+    throw new Error('MetaMask browser extension is not installed.');
   }
 
   const provider = new ethers.BrowserProvider(window.ethereum);
@@ -40,11 +64,11 @@ export async function getSignerContract() {
 }
 
 /**
- * Requests wallet connection via MetaMask
+ * Connects wallet via MetaMask
  */
 export async function connectWallet() {
   if (!window.ethereum) {
-    throw new Error('MetaMask is not installed in your browser.');
+    throw new Error('MetaMask extension is not detected in your browser.');
   }
 
   const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -53,9 +77,23 @@ export async function connectWallet() {
   }
 
   const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+  setDemoWalletRole(null);
   return {
     account: accounts[0],
     chainId
+  };
+}
+
+/**
+ * Connects a Demo Local Hardhat Wallet (Admin or Adopter) for testing without MetaMask
+ */
+export function connectDemoWallet(role = 'admin') {
+  const provider = new ethers.JsonRpcProvider(HARDHAT_RPC_URL);
+  const wallet = new ethers.Wallet(DEMO_KEYS[role], provider);
+  setDemoWalletRole(role);
+  return {
+    account: wallet.address,
+    chainId: HARDHAT_CHAIN_ID
   };
 }
 
@@ -71,7 +109,6 @@ export async function switchToHardhatNetwork() {
       params: [{ chainId: HARDHAT_CHAIN_ID }]
     });
   } catch (switchError) {
-    // Code 4902 means the chain has not been added to MetaMask
     if (switchError.code === 4902) {
       try {
         await window.ethereum.request({
@@ -138,5 +175,5 @@ export function parseError(err) {
     }
     return err.message;
   }
-  return 'Transaction failed. Please verify inputs and wallet network.';
+  return 'Transaction failed. Please verify inputs and network connection.';
 }
