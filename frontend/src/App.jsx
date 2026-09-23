@@ -10,7 +10,8 @@ import {
   getSignerContract, 
   connectWallet, 
   parseError,
-  HARDHAT_CHAIN_ID 
+  HARDHAT_CHAIN_ID,
+  FALLBACK_DEMO_PETS
 } from './utils/blockchain';
 
 export default function App() {
@@ -58,7 +59,7 @@ export default function App() {
     }
   }, []);
 
-  // Fetch all pets and statistics from smart contract
+  // Fetch all pets and statistics from smart contract (or fallback for hosted preview)
   const loadPetsAndStats = useCallback(async () => {
     setLoadingPets(true);
     try {
@@ -66,15 +67,23 @@ export default function App() {
       const allPets = await contract.getAllPets();
       const dashboardStats = await contract.getDashboardStats();
 
-      setPets(allPets);
-      setStats({
-        totalPets: Number(dashboardStats.totalPets),
-        availablePets: Number(dashboardStats.availablePets),
-        adoptedPets: Number(dashboardStats.adoptedPets),
-        totalRequests: Number(dashboardStats.totalRequests)
-      });
+      if (allPets && allPets.length > 0) {
+        setPets(allPets);
+        setStats({
+          totalPets: Number(dashboardStats.totalPets),
+          availablePets: Number(dashboardStats.availablePets),
+          adoptedPets: Number(dashboardStats.adoptedPets),
+          totalRequests: Number(dashboardStats.totalRequests)
+        });
+      } else {
+        // Fallback for hosted site preview
+        setPets(FALLBACK_DEMO_PETS);
+        setStats({ totalPets: 8, availablePets: 7, adoptedPets: 1, totalRequests: 3 });
+      }
     } catch (err) {
-      console.error("Error loading pets from smart contract:", err);
+      console.warn("Could not fetch pets from local RPC node (e.g. hosted site preview), using demonstration pets:", err);
+      setPets(FALLBACK_DEMO_PETS);
+      setStats({ totalPets: 8, availablePets: 7, adoptedPets: 1, totalRequests: 3 });
     } finally {
       setLoadingPets(false);
     }
