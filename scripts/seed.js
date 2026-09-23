@@ -21,32 +21,60 @@ async function main() {
 
   const samplePets = [
     {
-      name: "Buddy",
-      breed: "Golden Retriever",
-      age: 2,
+      name: "Rudra",
+      breed: "Indie Dog Breed",
+      age: 1,
+      imageUri: "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&q=80&w=600",
+      description: "Super energetic 1-year-old Indie boy with a handsome bowtie! Extremely smart, quick to learn, loves morning walks and sunny spots."
+    },
+    {
+      name: "Bella",
+      breed: "Indie Puppy",
+      age: 1,
+      imageUri: "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&q=80&w=600",
+      description: "Adorable 6-month-old Indie puppy wearing a polka-dot red bow tie. Inquisitive, playful, great with kids, and loves cozy lap naps."
+    },
+    {
+      name: "Pinky",
+      breed: "Indian Pariah Mix",
+      age: 1,
+      imageUri: "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&q=80&w=600",
+      description: "A pretty girl with the prettiest smile! Loves outdoor garden playtime, treats, dressing up in cute outfits, and belly rubs."
+    },
+    {
+      name: "Simba",
+      breed: "Golden Retriever Pup",
+      age: 1,
       imageUri: "https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&q=80&w=600",
-      description: "Friendly, intelligent, and energetic Golden Retriever. Loves playing fetch, water activities, and family companionship."
+      description: "Ultra-cute fluffy Golden puppy with endless energy. Loves playing fetch with tennis balls, water fun, and giving warm puppy cuddles."
+    },
+    {
+      name: "Coco",
+      breed: "Pug & Indie Mix",
+      age: 2,
+      imageUri: "https://images.unsplash.com/photo-1517849845537-4d257902454a?auto=format&fit=crop&q=80&w=600",
+      description: "Charming little cuddlebug who treats herself like royalty. Perfectly house-trained, calm, and loves family evening snuggles."
+    },
+    {
+      name: "Kavu",
+      breed: "Indie Beach Hound",
+      age: 2,
+      imageUri: "https://images.unsplash.com/photo-1587300003388-59208cc962cb?auto=format&fit=crop&q=80&w=600",
+      description: "Beach-loving Indie boy who adores golden hour sunsets, sandy runs, and playing in water. Loyal and athletic outdoor companion."
+    },
+    {
+      name: "Milo",
+      breed: "Indie Puppy",
+      age: 1,
+      imageUri: "https://images.unsplash.com/photo-1561037404-61cd46aa615b?auto=format&fit=crop&q=80&w=600",
+      description: "Gentle tan Indie puppy with adorable floppy ears and brown eyes. Fully vaccinated, healthy, and eager to find a forever home."
     },
     {
       name: "Luna",
       breed: "Siamese Cat",
       age: 1,
       imageUri: "https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&q=80&w=600",
-      description: "Gentle and affectionate Siamese cat with striking blue eyes. Perfect indoor companion, loves warm sun spots and quiet lap time."
-    },
-    {
-      name: "Max",
-      breed: "German Shepherd",
-      age: 3,
-      imageUri: "https://images.unsplash.com/photo-1589941013453-ec89f33b5e95?auto=format&fit=crop&q=80&w=600",
-      description: "Loyal, highly trained German Shepherd. Excellent guard dog, great agility skills, responds well to obedience commands."
-    },
-    {
-      name: "Rocky",
-      breed: "Beagle",
-      age: 4,
-      imageUri: "https://images.unsplash.com/photo-1537151608828-ea2b11777ee8?auto=format&fit=crop&q=80&w=600",
-      description: "Curious and cheerful Beagle with a keen sense of scent. Friendly with children and other pets, loves outdoor scent trails."
+      description: "Sweet indoor Siamese cat with striking blue eyes. Peaceful lap companion, loves quiet sunbeams."
     }
   ];
 
@@ -66,36 +94,35 @@ async function main() {
   console.log("\n2. Logging Verification & Vaccination Records...");
   const timestampNow = Math.floor(Date.now() / 1000);
   
-  // Pet 1 (Buddy) Vaccinations
-  await (await petChain.connect(admin).addVaccinationRecord(1, "Rabies Virus Vaccine", timestampNow - 86400 * 90, "Dr. Sarah Jenkins (City Pet Care)")).wait();
-  await (await petChain.connect(admin).addVaccinationRecord(1, "DHPP Combination", timestampNow - 86400 * 60, "Dr. Sarah Jenkins (City Pet Care)")).wait();
-  console.log(" -> Added 2 vaccination records for Buddy");
+  // Rudra Vaccinations
+  await (await petChain.connect(admin).addVaccinationRecord(1, "Rabies Virus Vaccine", timestampNow - 86400 * 90, "Dr. Sarah Jenkins (Pawsitive Vet Care)")).wait();
+  await (await petChain.connect(admin).addVaccinationRecord(1, "DHPP Combination", timestampNow - 86400 * 60, "Dr. Sarah Jenkins (Pawsitive Vet Care)")).wait();
 
-  // Pet 2 (Luna) Vaccinations
-  await (await petChain.connect(admin).addVaccinationRecord(2, "FVRCP Core Vaccine", timestampNow - 86400 * 45, "Dr. Michael Chang (Pawsitive Vet Clinic)")).wait();
-  console.log(" -> Added vaccination record for Luna");
+  // Bella Vaccinations
+  await (await petChain.connect(admin).addVaccinationRecord(2, "Puppy Core 7-in-1", timestampNow - 86400 * 30, "Dr. Michael Chang (PetCare Clinic)")).wait();
 
-  // Pet 3 (Max) Vaccinations
-  await (await petChain.connect(admin).addVaccinationRecord(3, "Bordetella Kennel Cough", timestampNow - 86400 * 30, "Dr. Sarah Jenkins (City Pet Care)")).wait();
-  console.log(" -> Added vaccination record for Max");
+  // Pinky Vaccinations
+  await (await petChain.connect(admin).addVaccinationRecord(3, "Rabies & Anti-Tick", timestampNow - 86400 * 45, "Dr. Sarah Jenkins (Pawsitive Vet Care)")).wait();
+
+  // Simba Vaccinations
+  await (await petChain.connect(admin).addVaccinationRecord(4, "DHPP Booster", timestampNow - 86400 * 20, "Dr. Michael Chang (PetCare Clinic)")).wait();
+
+  console.log(" -> Added vaccination records for Rudra, Bella, Pinky, and Simba");
 
   console.log("\n3. Submitting Sample Adoption Requests...");
-  // Adopter 1 requests Buddy (Pet 1)
+  // Adopter 1 requests Rudra (Pet 1)
   await (await petChain.connect(adopter1).requestAdoption(1, "We live in a quiet suburban home with a spacious fenced backyard and 2 kids.")).wait();
-  console.log(` -> Adopter 1 (${adopter1.address.substring(0,6)}...) submitted adoption request for Buddy`);
 
-  // Adopter 2 requests Buddy (Pet 1)
+  // Adopter 2 requests Rudra (Pet 1)
   await (await petChain.connect(adopter2).requestAdoption(1, "Work from home full-time, experienced dog owner with active outdoor lifestyle.")).wait();
-  console.log(` -> Adopter 2 (${adopter2.address.substring(0,6)}...) submitted adoption request for Buddy`);
 
-  // Adopter 1 requests Luna (Pet 2)
-  await (await petChain.connect(adopter1).requestAdoption(2, "Looking for a peaceful indoor feline companion.")).wait();
-  console.log(` -> Adopter 1 submitted adoption request for Luna`);
+  // Adopter 1 requests Pinky (Pet 3)
+  await (await petChain.connect(adopter1).requestAdoption(3, "Looking for a cute Indie pup to spoil with love and treats.")).wait();
 
-  console.log("\n4. Approving Sample Adoption (Buddy -> Adopter 1)...");
-  // Admin approves request 0 (Adopter 1) for Buddy (Pet 1)
+  console.log("\n4. Approving Sample Adoption (Rudra -> Adopter 1)...");
+  // Admin approves request 0 (Adopter 1) for Rudra (Pet 1)
   await (await petChain.connect(admin).approveAdoption(1, 0)).wait();
-  console.log(" -> Approved adoption of Buddy to Adopter 1. Ownership updated & timeline logged!");
+  console.log(" -> Approved adoption of Rudra to Adopter 1. Ownership updated & timeline logged!");
 
   console.log("\n==================================================");
   console.log("PetChain Demonstration Data Successfully Seeded!");
