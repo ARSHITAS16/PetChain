@@ -1,12 +1,12 @@
 import React from 'react';
-import { Check, X, Clock, User, FileText } from 'lucide-react';
+import { Check, X, Clock, User, FileText, PawPrint } from 'lucide-react';
 import { formatAddress, formatTimestamp } from '../utils/blockchain';
 
 export default function AdoptionRequestList({ requests, onApprove, onReject, loading }) {
   if (!requests || requests.length === 0) {
     return (
       <div style={{ textTransform: 'none', color: '#9ca3af', fontStyle: 'italic', padding: '1rem 0' }}>
-        No adoption requests submitted yet for this pet.
+        No adoption requests submitted yet.
       </div>
     );
   }
@@ -32,13 +32,19 @@ export default function AdoptionRequestList({ requests, onApprove, onReject, loa
               gap: '0.75rem'
             }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <User size={16} color="#38bdf8" />
-                <span style={{ fontWeight: 600, color: '#f3f4f6' }}>{formatAddress(req.applicant)}</span>
-                <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-                  ({req.applicant})
-                </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                {req.petName && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', padding: '0.2rem 0.65rem', borderRadius: '6px', fontSize: '0.85rem', color: '#38bdf8', fontWeight: 600 }}>
+                    <PawPrint size={14} />
+                    <span>{req.petName} (Pet #{req.petId})</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <User size={15} color="#94a3b8" />
+                  <span style={{ fontWeight: 600, color: '#f3f4f6', fontSize: '0.9rem' }}>{formatAddress(req.applicant)}</span>
+                </div>
               </div>
 
               <div>
@@ -49,13 +55,17 @@ export default function AdoptionRequestList({ requests, onApprove, onReject, loa
             </div>
 
             {req.applicantNotes && (
-              <div style={{ fontSize: '0.9rem', color: '#d1d5db', background: 'rgba(0,0,0,0.2)', padding: '0.75rem', borderRadius: '6px' }}>
-                <FileText size={14} style={{ display: 'inline', marginRight: '6px', color: '#9ca3af' }} />
-                "{req.applicantNotes}"
+              <div style={{ fontSize: '0.9rem', color: '#d1d5db', background: 'rgba(0,0,0,0.25)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize: '0.75rem', color: '#38bdf8', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <FileText size={12} /> Applicant Notes & Housing Details
+                </div>
+                <div style={{ fontStyle: 'italic', color: '#e2e8f0' }}>
+                  "{req.applicantNotes}"
+                </div>
               </div>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#9ca3af', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', color: '#9ca3af', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span>Submitted: {formatTimestamp(req.timestamp)}</span>
 
               {isPending && (

@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Heart, Shield, Syringe, History, CheckCircle, Clock, Calendar, User } from 'lucide-react';
+import { ArrowLeft, Heart, Shield, Syringe, History, CheckCircle, Clock, Calendar, User, Check } from 'lucide-react';
 import { 
   formatAddress, 
   formatTimestamp, 
   getReadOnlyContract,
-  FALLBACK_DEMO_PETS,
-  FALLBACK_VACCINATIONS,
-  FALLBACK_OWNERSHIP_HISTORY
+  demoStore
 } from '../utils/blockchain';
 import OwnershipHistory from '../components/OwnershipHistory';
 import VaccinationForm from '../components/VaccinationForm';
@@ -15,6 +13,7 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
   const [pet, setPet] = useState(null);
   const [vaccinations, setVaccinations] = useState([]);
   const [history, setHistory] = useState([]);
+  const [adoptionRequests, setAdoptionRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -27,18 +26,19 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
         const petData = await contract.getPetDetails(petId);
         const vaxData = await contract.getVaccinationHistory(petId);
         const historyData = await contract.getOwnershipHistory(petId);
+        const reqData = await contract.getAdoptionRequests(petId);
 
         setPet(petData);
-        setVaccinations(vaxData);
-        setHistory(historyData);
+        setVaccinations(vaxData || []);
+        setHistory(historyData || []);
+        setAdoptionRequests(reqData || []);
       } catch (err) {
-        console.warn("Using fallback demo details for pet #", petId);
-        const fallbackPet = FALLBACK_DEMO_PETS.find(p => Number(p.petId) === Number(petId)) || FALLBACK_DEMO_PETS[0];
+        console.warn("Using demoStore details for pet #", petId, err);
+        const fallbackPet = demoStore.getPet(petId);
         setPet(fallbackPet);
-        setVaccinations(FALLBACK_VACCINATIONS[Number(petId)] || []);
-        setHistory(FALLBACK_OWNERSHIP_HISTORY[Number(petId)] || [
-          { previousOwner: '0x0000000000000000000000000000000000000000', newOwner: '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266', timestamp: 1774300000n, reason: 'Initial Shelter Registration' }
-        ]);
+        setVaccinations(demoStore.getVaccinations(petId));
+        setHistory(demoStore.getOwnershipHistory(petId));
+        setAdoptionRequests(demoStore.getAdoptionRequests(petId));
       } finally {
         setLoading(false);
       }
@@ -68,7 +68,11 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
     );
   }
 
-  const isOwner = userAccount && pet.owner.toLowerCase() === userAccount.toLowerCase();
+  const isOwner = Boolean(userAccount && pet.owner && userAccount.toLowerCase() === pet.owner.toLowerCase());
+  const userHasPendingRequest = Boolean(
+    userAccount && 
+    adoptionRequests.some(r => r.applicant && r.applicant.toLowerCase() === userAccount.toLowerCase() && Number(r.status) === 0)
+  );
 
   return (
     <div>
@@ -107,7 +111,22 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
                 {pet.breed} • {Number(pet.age)} {Number(pet.age) === 1 ? 'year' : 'years'} old
               </p>
 
-              {!pet.isAdopted && !isOwner && (
+              {/* Status and Action Buttons */}
+              {isOwner ? (
+                <div style={{ background: 'rgba(16, 185, 129, 0.12)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.85rem', borderRadius: '8px', color: '#6ee7b7', fontSize: '0.9rem', textAlign: 'center' }}>
+                  <Check size={16} style={{ display: 'inline', marginRight: '6px' }} />
+                  <strong>You are the registered guardian of this pet!</strong>
+                </div>
+              ) : pet.isAdopted ? (
+                <div style={{ background: 'rgba(129, 140, 248, 0.1)', border: '1px solid rgba(129, 140, 248, 0.2)', padding: '0.85rem', borderRadius: '8px', color: '#a5b4fc', fontSize: '0.9rem', textAlign: 'center' }}>
+                  This pet has been successfully adopted! View verified ownership timeline below.
+                </div>
+              ) : userHasPendingRequest ? (
+                <div style={{ background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', padding: '0.85rem', borderRadius: '8px', color: '#fbbf24', fontSize: '0.9rem', textAlign: 'center' }}>
+                  <Clock size={16} style={{ display: 'inline', marginRight: '6px' }} />
+                  Your adoption application has been submitted and is pending shelter review!
+                </div>
+              ) : (
                 <button 
                   onClick={() => onRequestAdoption(pet)} 
                   disabled={loadingTx} 
@@ -116,12 +135,6 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
                 >
                   <Heart size={18} /> Request Adoption
                 </button>
-              )}
-
-              {pet.isAdopted && (
-                <div style={{ background: 'rgba(129, 140, 248, 0.1)', border: '1px solid rgba(129, 140, 248, 0.2)', padding: '0.85rem', borderRadius: '8px', color: '#a5b4fc', fontSize: '0.9rem', textAlign: 'center' }}>
-                  This pet has been successfully adopted! View ownership timeline below.
-                </div>
               )}
             </div>
           </div>

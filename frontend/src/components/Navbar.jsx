@@ -2,11 +2,11 @@ import React from 'react';
 import { PawPrint, Home, Grid, ShieldCheck } from 'lucide-react';
 import WalletConnect from './WalletConnect';
 
-export default function Navbar({ activeTab, setActiveTab, account, setAccount, chainId, setChainId, isAdmin }) {
+export default function Navbar({ activeTab, setActiveTab, account, setAccount, chainId, setChainId, isAdmin, onDemoReset }) {
   return (
     <nav className="navbar">
       <div className="navbar-inner">
-        <a href="#home" onClick={() => setActiveTab('home')} className="nav-brand">
+        <a href="#home" onClick={(e) => { e.preventDefault(); setActiveTab('home'); }} className="nav-brand">
           <div className="brand-icon">
             <PawPrint size={22} color="#ffffff" />
           </div>
@@ -25,7 +25,7 @@ export default function Navbar({ activeTab, setActiveTab, account, setAccount, c
           </li>
           <li>
             <a 
-              className={`nav-link ${activeTab === 'pets' ? 'active' : ''}`}
+              className={`nav-link ${activeTab === 'pets' || activeTab === 'pet-details' ? 'active' : ''}`}
               onClick={() => setActiveTab('pets')}
             >
               <Grid size={16} style={{ display: 'inline', marginRight: '4px' }} />
@@ -51,6 +51,7 @@ export default function Navbar({ activeTab, setActiveTab, account, setAccount, c
           chainId={chainId} 
           setChainId={setChainId} 
           isAdmin={isAdmin}
+          onDemoReset={onDemoReset}
         />
       </div>
     </nav>

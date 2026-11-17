@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, PlusCircle, Heart, Syringe, CheckCircle, Clock, Eye } from 'lucide-react';
+import { Shield, PlusCircle, Heart, Syringe, CheckCircle, Clock, Eye, AlertCircle } from 'lucide-react';
 import PetForm from '../components/PetForm';
 import AdoptionRequestList from '../components/AdoptionRequestList';
-import { getReadOnlyContract, formatAddress } from '../utils/blockchain';
+import { getReadOnlyContract, formatAddress, demoStore } from '../utils/blockchain';
 
 export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRejectAdoption, onViewPetDetails, loadingTx }) {
   const [pets, setPets] = useState([]);
@@ -14,14 +14,14 @@ export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRej
     try {
       const contract = getReadOnlyContract();
       const allPets = await contract.getAllPets();
-      setPets(allPets);
+      setPets(allPets || []);
 
       // Collect all requests for each pet
       let combinedRequests = [];
-      for (const pet of allPets) {
+      for (const pet of (allPets || [])) {
         const petId = Number(pet.petId);
         const reqs = await contract.getAdoptionRequests(petId);
-        reqs.forEach((r, idx) => {
+        (reqs || []).forEach((r, idx) => {
           combinedRequests.push({
             petId,
             petName: pet.name,
@@ -35,7 +35,26 @@ export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRej
       }
       setAllRequests(combinedRequests);
     } catch (err) {
-      console.error("Failed to fetch admin dashboard data:", err);
+      console.warn("Using demoStore for admin dashboard data:", err);
+      const allPets = demoStore.getAllPets();
+      setPets(allPets);
+      let combinedRequests = [];
+      for (const pet of allPets) {
+        const petId = Number(pet.petId);
+        const reqs = demoStore.getAdoptionRequests(petId);
+        reqs.forEach((r, idx) => {
+          combinedRequests.push({
+            petId,
+            petName: pet.name,
+            requestIndex: idx,
+            applicant: r.applicant,
+            applicantNotes: r.applicantNotes,
+            timestamp: r.timestamp,
+            status: Number(r.status)
+          });
+        });
+      }
+      setAllRequests(combinedRequests);
     } finally {
       setLoading(false);
     }
@@ -45,7 +64,7 @@ export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRej
     fetchAdminData();
   }, [loadingTx]);
 
-  const pendingRequests = allRequests.filter(r => r.status === 0);
+  const pendingRequests = allRequests.filter(r => Number(r.status) === 0);
 
   return (
     <div>
@@ -70,21 +89,30 @@ export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRej
           <h2 style={{ fontSize: '1.3rem', color: '#f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Heart size={20} color="#fbbf24" /> Pending Adoption Applications ({pendingRequests.length})
           </h2>
+          <span style={{ fontSize: '0.85rem', color: '#9ca3af' }}>
+            Review applicant housing notes and approve adoption
+          </span>
         </div>
 
         {pendingRequests.length > 0 ? (
-          <AdoptionRequestList 
-            requests={pendingRequests}
-            onApprove={(idx) => {
-              const req = pendingRequests[idx];
-              onApproveAdoption(req.petId, req.requestIndex);
-            }}
-            onReject={(idx) => {
-              const req = pendingRequests[idx];
-              onRejectAdoption(req.petId, req.requestIndex);
-            }}
-            loading={loadingTx}
-          />
+          <div>
+            <div style={{ marginBottom: '1rem', padding: '0.65rem 0.85rem', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '8px', fontSize: '0.85rem', color: '#fde68a' }}>
+              💡 Approving an adoption application will transfer smart contract ownership to the adopter and automatically update the pet's immutable history.
+            </div>
+
+            <AdoptionRequestList 
+              requests={pendingRequests}
+              onApprove={(idx) => {
+                const req = pendingRequests[idx];
+                onApproveAdoption(req.petId, req.requestIndex);
+              }}
+              onReject={(idx) => {
+                const req = pendingRequests[idx];
+                onRejectAdoption(req.petId, req.requestIndex);
+              }}
+              loading={loadingTx}
+            />
+          </div>
         ) : (
           <p style={{ color: '#9ca3af', fontStyle: 'italic', padding: '1rem 0' }}>
             There are currently no pending adoption applications requiring shelter review.

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Shield, Sparkles, Heart, RefreshCw, Lock, Award, ArrowRight } from 'lucide-react';
+import { Shield, Sparkles, Heart, RefreshCw, Lock, Award, ArrowRight, UserCheck } from 'lucide-react';
 
-export default function Home({ stats, onBrowsePets, onConnectWallet, account }) {
+export default function Home({ stats, onBrowsePets, onConnectWallet, account, onSelectDemoRole }) {
   return (
     <div className="home-page">
       {/* Hero Header */}
@@ -19,14 +19,24 @@ export default function Home({ stats, onBrowsePets, onConnectWallet, account }) 
           PetChain revolutionizes animal welfare by storing pet registries, adoption lifecycles, vaccination logs, and ownership transfers immutably on a decentralized Ethereum ledger.
         </p>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
           <button onClick={onBrowsePets} className="btn btn-primary" style={{ padding: '0.85rem 1.75rem', fontSize: '1rem' }}>
             Browse Available Pets <ArrowRight size={18} />
           </button>
 
+          {onSelectDemoRole && (
+            <button 
+              onClick={() => onSelectDemoRole('adopter')} 
+              className="btn btn-secondary" 
+              style={{ padding: '0.85rem 1.75rem', fontSize: '1rem', borderColor: 'rgba(56, 189, 248, 0.4)' }}
+            >
+              <UserCheck size={18} color="#38bdf8" /> Try Demo Mode (Adopter)
+            </button>
+          )}
+
           {!account && (
             <button onClick={onConnectWallet} className="btn btn-secondary" style={{ padding: '0.85rem 1.75rem', fontSize: '1rem' }}>
-              Connect MetaMask Wallet
+              Connect MetaMask
             </button>
           )}
         </div>

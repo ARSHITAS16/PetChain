@@ -9,21 +9,26 @@ import {
   getReadOnlyContract, 
   getSignerContract, 
   connectWallet, 
+  connectDemoWallet,
   parseError,
+  formatAddress,
   HARDHAT_CHAIN_ID,
-  FALLBACK_DEMO_PETS
+  ADMIN_ADDRESS,
+  ADOPTER_ADDRESS,
+  demoStore
 } from './utils/blockchain';
 
 export default function App() {
-  const [account, setAccount] = useState(null);
-  const [chainId, setChainId] = useState(null);
-  const [adminAddress, setAdminAddress] = useState(null);
+  // Default to Demo Adopter account on initial load
+  const [account, setAccount] = useState(ADOPTER_ADDRESS);
+  const [chainId, setChainId] = useState(HARDHAT_CHAIN_ID);
+  const [adminAddress, setAdminAddress] = useState(ADMIN_ADDRESS);
   
   const [activeTab, setActiveTab] = useState('home'); // home, pets, pet-details, admin
   const [selectedPetId, setSelectedPetId] = useState(null);
 
   const [pets, setPets] = useState([]);
-  const [stats, setStats] = useState({ totalPets: 0, availablePets: 0, adoptedPets: 0, totalRequests: 0 });
+  const [stats, setStats] = useState({ totalPets: 8, availablePets: 7, adoptedPets: 1, totalRequests: 2 });
   const [loadingPets, setLoadingPets] = useState(false);
 
   // Adoption Request Modal State for User Input
@@ -44,7 +49,9 @@ export default function App() {
     try {
       const contract = getReadOnlyContract();
       const adminAcc = await contract.admin();
-      setAdminAddress(adminAcc);
+      if (adminAcc) {
+        setAdminAddress(adminAcc);
+      }
 
       if (window.ethereum) {
         const accounts = await window.ethereum.request({ method: 'eth_accounts' });
@@ -55,11 +62,12 @@ export default function App() {
         setChainId(currentChain);
       }
     } catch (err) {
-      console.warn("Failed to read contract admin or initial wallet state:", err);
+      console.warn("Operating in local demo mode:", err);
+      setAdminAddress(ADMIN_ADDRESS);
     }
   }, []);
 
-  // Fetch all pets and statistics from smart contract (or fallback for hosted preview)
+  // Fetch all pets and statistics from smart contract (or fallback to persistent demoStore)
   const loadPetsAndStats = useCallback(async () => {
     setLoadingPets(true);
     try {
@@ -76,14 +84,13 @@ export default function App() {
           totalRequests: Number(dashboardStats.totalRequests)
         });
       } else {
-        // Fallback for hosted site preview
-        setPets(FALLBACK_DEMO_PETS);
-        setStats({ totalPets: 8, availablePets: 7, adoptedPets: 1, totalRequests: 3 });
+        setPets(demoStore.getAllPets());
+        setStats(demoStore.getDashboardStats());
       }
     } catch (err) {
-      console.warn("Could not fetch pets from local RPC node (e.g. hosted site preview), using demonstration pets:", err);
-      setPets(FALLBACK_DEMO_PETS);
-      setStats({ totalPets: 8, availablePets: 7, adoptedPets: 1, totalRequests: 3 });
+      console.warn("Using demo storage for pets & stats:", err);
+      setPets(demoStore.getAllPets());
+      setStats(demoStore.getDashboardStats());
     } finally {
       setLoadingPets(false);
     }
@@ -105,8 +112,9 @@ export default function App() {
   // Open Adoption Modal
   const handleOpenAdoptModal = (pet) => {
     if (!account) {
-      alert("Please connect your MetaMask wallet first to submit an adoption application.");
-      return;
+      const { account: demoAcc, chainId: demoChain } = connectDemoWallet('adopter');
+      setAccount(demoAcc);
+      setChainId(demoChain);
     }
     setSelectedPetForAdopt(pet);
     setApplicantNotes('');
@@ -121,7 +129,9 @@ export default function App() {
       const tx = await txPromise(contractWithSigner);
       
       setTxModal({ isOpen: true, txStatus: 'mining', txHash: tx.hash, error: null });
-      await tx.wait();
+      if (tx.wait) {
+        await tx.wait();
+      }
 
       setTxModal({ isOpen: true, txStatus: 'success', txHash: tx.hash, error: null });
       await loadPetsAndStats();
@@ -150,11 +160,12 @@ export default function App() {
     e.preventDefault();
     if (!selectedPetForAdopt) return;
 
-    setAdoptModalOpen(false);
     const petId = Number(selectedPetForAdopt.petId);
+    const notesToSubmit = applicantNotes.trim() || 'Spacious home with caring environment and pet experience.';
+    setAdoptModalOpen(false);
 
     await executeTx((contract) => 
-      contract.requestAdoption(petId, applicantNotes)
+      contract.requestAdoption(petId, notesToSubmit)
     );
   };
 
@@ -184,8 +195,83 @@ export default function App() {
     );
   };
 
+  // 6. Reset Demo State
+  const handleDemoReset = async () => {
+    if (window.confirm("Reset all PetChain demo records (pets, adoption applications, ownership timeline) back to initial seed data?")) {
+      demoStore.reset();
+      await loadPetsAndStats();
+      alert("PetChain demo state has been reset to defaults!");
+    }
+  };
+
   return (
     <div className="app-container">
+      {/* Interactive Demo Mode Banner for seamless testing */}
+      <div style={{
+        background: 'linear-gradient(90deg, rgba(56, 189, 248, 0.15), rgba(129, 140, 248, 0.15))',
+        borderBottom: '1px solid rgba(56, 189, 248, 0.25)',
+        padding: '0.55rem 1.5rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        fontSize: '0.85rem',
+        color: '#e2e8f0',
+        flexWrap: 'wrap',
+        gap: '0.75rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <span style={{ 
+            background: isAdmin ? '#d97706' : '#0284c7', 
+            color: '#fff', 
+            padding: '0.15rem 0.55rem', 
+            borderRadius: '4px', 
+            fontWeight: 700, 
+            fontSize: '0.75rem',
+            letterSpacing: '0.5px'
+          }}>
+            DEMO MODE
+          </span>
+          <span>
+            Active Role: <strong style={{ color: isAdmin ? '#fbbf24' : '#38bdf8' }}>{isAdmin ? '👑 Shelter Admin' : '🐶 Pet Adopter'}</strong>
+            <span style={{ color: '#94a3b8', marginLeft: '6px' }}>({formatAddress(account)})</span>
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>Switch Role:</span>
+          <button 
+            onClick={() => {
+              const { account: demoAcc, chainId: demoChain } = connectDemoWallet('adopter');
+              setAccount(demoAcc);
+              setChainId(demoChain);
+            }}
+            className={`btn btn-sm ${!isAdmin ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '0.2rem 0.65rem', fontSize: '0.78rem' }}
+          >
+            🐶 Demo Adopter
+          </button>
+          <button 
+            onClick={() => {
+              const { account: demoAcc, chainId: demoChain } = connectDemoWallet('admin');
+              setAccount(demoAcc);
+              setChainId(demoChain);
+            }}
+            className={`btn btn-sm ${isAdmin ? 'btn-primary' : 'btn-secondary'}`}
+            style={{ padding: '0.2rem 0.65rem', fontSize: '0.78rem' }}
+          >
+            👑 Demo Admin
+          </button>
+          <button
+            onClick={handleDemoReset}
+            className="btn btn-secondary btn-sm"
+            title="Reset demo data to default seeds"
+            style={{ padding: '0.2rem 0.55rem', fontSize: '0.78rem' }}
+          >
+            ↺ Reset State
+          </button>
+        </div>
+      </div>
+
       <Navbar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab}
@@ -194,6 +280,7 @@ export default function App() {
         chainId={chainId}
         setChainId={setChainId}
         isAdmin={isAdmin}
+        onDemoReset={handleDemoReset}
       />
 
       <main className="main-content">
@@ -203,6 +290,12 @@ export default function App() {
             onBrowsePets={() => setActiveTab('pets')}
             onConnectWallet={connectWallet}
             account={account}
+            onSelectDemoRole={(role) => {
+              const { account: demoAcc, chainId: demoChain } = connectDemoWallet(role);
+              setAccount(demoAcc);
+              setChainId(demoChain);
+              setActiveTab('pets');
+            }}
           />
         )}
 
@@ -250,16 +343,16 @@ export default function App() {
             </div>
 
             <form onSubmit={handleSubmitAdoptionRequest}>
-              <p style={{ color: '#9ca3af', fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-                Your adoption request will be logged on-chain for shelter review. Please provide relevant details about your living space or pet experience.
-              </p>
+              <div style={{ background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.2)', padding: '0.85rem', borderRadius: '8px', marginBottom: '1.25rem', fontSize: '0.85rem', color: '#93c5fd' }}>
+                Applying as <strong>{formatAddress(account)}</strong>. Your application will be recorded on-chain for the shelter administrator to review and approve.
+              </div>
 
               <div className="form-group">
                 <label className="form-label">Applicant Notes & Housing Info *</label>
                 <textarea 
                   className="form-control" 
                   rows="4" 
-                  placeholder="e.g. Spacious yard, quiet home, previous dog ownership experience..."
+                  placeholder="e.g. Spacious yard, quiet home, previous dog ownership experience, work from home schedule..."
                   value={applicantNotes}
                   onChange={(e) => setApplicantNotes(e.target.value)}
                   required
@@ -291,7 +384,7 @@ export default function App() {
       <footer className="footer">
         <p>© 2026 PetChain. Blockchain Pet Adoption & Ownership System.</p>
         <p style={{ fontSize: '0.8rem', color: '#6b7280', marginTop: '0.25rem' }}>
-          Powered by Ethereum Smart Contracts • Hardhat Local Network (Chain ID: 31337)
+          Powered by Ethereum Smart Contracts • Hardhat Local Network (Chain ID: 31337) • Instant Demo Mode
         </p>
       </footer>
     </div>
