@@ -467,7 +467,7 @@ export const demoStore = {
 /**
  * In-memory simulation contract providing standard PetChain interface
  */
-class SimulatedContract {
+export class SimulatedContract {
   constructor(role = 'adopter') {
     this.role = role;
     this.currentAccount = role === 'admin' ? ADMIN_ADDRESS : ADOPTER_ADDRESS;
@@ -696,6 +696,9 @@ export function parseError(err) {
   }
   if (err.reason) return err.reason;
   if (err.message) {
+    if (err.message.includes('-32002') || err.message.includes('RPC endpoint') || err.message.includes('eth_blockNumber')) {
+      return 'MetaMask RPC network error. Please use PetChain Demo Mode (selected in the top bar) to submit transactions without MetaMask.';
+    }
     if (err.message.includes('PetChain:')) {
       const match = err.message.match(/PetChain:[^"']+/);
       if (match) return match[0];

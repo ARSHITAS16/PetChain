@@ -73,19 +73,33 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
 
   useEffect(() => {
     if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
+      const handleAccounts = (accounts) => {
+        // Do not override account if user is in Demo Mode
+        if (isDemoMode) return;
         if (accounts.length > 0) {
           setAccount(accounts[0]);
         } else {
           setAccount(null);
         }
-      });
+      };
 
-      window.ethereum.on('chainChanged', (newChainId) => {
-        setChainId(newChainId);
-      });
+      const handleChain = (newChainId) => {
+        if (!isDemoMode) {
+          setChainId(newChainId);
+        }
+      };
+
+      window.ethereum.on('accountsChanged', handleAccounts);
+      window.ethereum.on('chainChanged', handleChain);
+
+      return () => {
+        if (window.ethereum.removeListener) {
+          window.ethereum.removeListener('accountsChanged', handleAccounts);
+          window.ethereum.removeListener('chainChanged', handleChain);
+        }
+      };
     }
-  }, [setAccount, setChainId]);
+  }, [setAccount, setChainId, isDemoMode]);
 
   const isWrongNetwork = account && hasMetaMask && !isDemoMode && chainId && chainId !== HARDHAT_CHAIN_ID;
 
