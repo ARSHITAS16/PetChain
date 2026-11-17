@@ -2,7 +2,14 @@ import React from 'react';
 import { PawPrint, Home, Grid, ShieldCheck } from 'lucide-react';
 import WalletConnect from './WalletConnect';
 
-export default function Navbar({ activeTab, setActiveTab, account, setAccount, chainId, setChainId, isAdmin, onDemoReset }) {
+export default function Navbar({ activeTab, setActiveTab, account, setAccount, chainId, setChainId, isAdmin, setIsAdmin, onDemoReset }) {
+  const handleNavAdmin = () => {
+    if (setIsAdmin) {
+      setIsAdmin(true); // Ensure admin mode is active when opening Admin Dashboard
+    }
+    setActiveTab('admin');
+  };
+
   return (
     <nav className="navbar">
       <div className="navbar-inner">
@@ -32,17 +39,21 @@ export default function Navbar({ activeTab, setActiveTab, account, setAccount, c
               Browse Pets
             </a>
           </li>
-          {isAdmin && (
-            <li>
-              <a 
-                className={`nav-link ${activeTab === 'admin' ? 'active' : ''}`}
-                onClick={() => setActiveTab('admin')}
-              >
-                <ShieldCheck size={16} style={{ display: 'inline', marginRight: '4px' }} />
-                Admin Dashboard
-              </a>
-            </li>
-          )}
+          <li>
+            <a 
+              className={`nav-link ${activeTab === 'admin' ? 'active' : ''}`}
+              onClick={handleNavAdmin}
+              title="Shelter Administrator Control Dashboard"
+              style={{
+                color: isAdmin ? '#fbbf24' : undefined,
+                fontWeight: isAdmin ? 700 : undefined
+              }}
+            >
+              <ShieldCheck size={16} style={{ display: 'inline', marginRight: '4px' }} />
+              Admin Dashboard
+              {isAdmin && <span className="admin-badge" style={{ marginLeft: '6px' }}>ACTIVE</span>}
+            </a>
+          </li>
         </ul>
 
         <WalletConnect 
@@ -51,6 +62,7 @@ export default function Navbar({ activeTab, setActiveTab, account, setAccount, c
           chainId={chainId} 
           setChainId={setChainId} 
           isAdmin={isAdmin}
+          setIsAdmin={setIsAdmin}
           onDemoReset={onDemoReset}
         />
       </div>

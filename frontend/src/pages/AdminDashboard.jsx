@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, PlusCircle, Heart, Syringe, CheckCircle, Clock, Eye, AlertCircle } from 'lucide-react';
+import { Shield, PlusCircle, Heart, Syringe, CheckCircle, Clock, Eye, AlertCircle, Check } from 'lucide-react';
 import PetForm from '../components/PetForm';
 import AdoptionRequestList from '../components/AdoptionRequestList';
 import { getReadOnlyContract, formatAddress, demoStore } from '../utils/blockchain';
 
-export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRejectAdoption, onViewPetDetails, loadingTx }) {
+export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRejectAdoption, onViewPetDetails, loadingTx, account, isAdmin, onEnableAdmin }) {
   const [pets, setPets] = useState([]);
   const [allRequests, setAllRequests] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,24 +68,57 @@ export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRej
 
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-        <div style={{ background: 'rgba(245, 158, 11, 0.15)', padding: '0.65rem', borderRadius: '12px' }}>
-          <Shield size={28} color="#fbbf24" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ background: 'rgba(245, 158, 11, 0.15)', padding: '0.65rem', borderRadius: '12px' }}>
+            <Shield size={28} color="#fbbf24" />
+          </div>
+          <div>
+            <h1 style={{ fontSize: '1.8rem', color: '#f3f4f6' }}>Shelter Admin Control Dashboard</h1>
+            <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
+              Review adoption applications, approve ownership transfers, register pets, and log medical records.
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', color: '#f3f4f6' }}>Shelter Admin Control Dashboard</h1>
-          <p style={{ color: '#9ca3af', fontSize: '0.9rem' }}>
-            Authorized portal for pet registration, adoption approval, and medical record logging.
-          </p>
-        </div>
+
+        {!isAdmin && onEnableAdmin && (
+          <button 
+            onClick={onEnableAdmin}
+            className="btn btn-warning btn-sm"
+            style={{ background: '#f59e0b', color: '#000', fontWeight: 700 }}
+          >
+            👑 Grant Admin Privileges
+          </button>
+        )}
       </div>
 
-      {/* Register Pet Form */}
-      <PetForm onSubmitPet={onRegisterPet} loading={loadingTx} />
+      {/* Admin Privileges Badge Banner */}
+      <div style={{ 
+        background: 'rgba(245, 158, 11, 0.08)', 
+        border: '1px solid rgba(245, 158, 11, 0.25)', 
+        padding: '0.85rem 1.25rem', 
+        borderRadius: '10px', 
+        marginBottom: '2rem',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.75rem'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <CheckCircle size={18} color="#fbbf24" />
+          <span style={{ fontSize: '0.9rem', color: '#fef3c7' }}>
+            Administrator Access Active for: <strong>{formatAddress(account)}</strong>
+          </span>
+        </div>
+        <span style={{ fontSize: '0.8rem', color: '#fbbf24', background: 'rgba(245, 158, 11, 0.2)', padding: '0.2rem 0.6rem', borderRadius: '4px', fontWeight: 600 }}>
+          SHELTER APPROVER AUTHORIZED
+        </span>
+      </div>
 
       {/* Pending Adoption Requests Section */}
       <div className="card" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
           <h2 style={{ fontSize: '1.3rem', color: '#f3f4f6', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Heart size={20} color="#fbbf24" /> Pending Adoption Applications ({pendingRequests.length})
           </h2>
@@ -119,6 +152,9 @@ export default function AdminDashboard({ onRegisterPet, onApproveAdoption, onRej
           </p>
         )}
       </div>
+
+      {/* Register Pet Form */}
+      <PetForm onSubmitPet={onRegisterPet} loading={loadingTx} />
 
       {/* Overview Table of Registered Pets */}
       <div className="card">

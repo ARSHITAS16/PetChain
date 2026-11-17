@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wallet, ShieldAlert, CheckCircle2, ExternalLink, UserCheck, ChevronDown, RefreshCw } from 'lucide-react';
+import { Wallet, ShieldAlert, CheckCircle2, ExternalLink, UserCheck, ChevronDown, RefreshCw, Shield, User } from 'lucide-react';
 import { 
   connectWallet, 
   connectDemoWallet, 
@@ -7,11 +7,10 @@ import {
   formatAddress, 
   HARDHAT_CHAIN_ID,
   ADMIN_ADDRESS,
-  ADOPTER_ADDRESS,
-  demoStore
+  ADOPTER_ADDRESS
 } from '../utils/blockchain';
 
-export default function WalletConnect({ account, setAccount, chainId, setChainId, isAdmin, onDemoReset }) {
+export default function WalletConnect({ account, setAccount, chainId, setChainId, isAdmin, setIsAdmin, onDemoReset }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showDemoMenu, setShowDemoMenu] = useState(false);
@@ -21,7 +20,7 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
   const isDemoAdopter = account && account.toLowerCase() === ADOPTER_ADDRESS.toLowerCase();
   const isDemoMode = isDemoAdmin || isDemoAdopter;
 
-  const handleConnect = async () => {
+  const handleConnectMetaMask = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -29,21 +28,15 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
         const { account: connectedAcc, chainId: connectedChain } = await connectWallet();
         setAccount(connectedAcc);
         setChainId(connectedChain);
-        if (connectedChain !== HARDHAT_CHAIN_ID) {
-          try {
-            await switchToHardhatNetwork();
-            const updatedChain = await window.ethereum.request({ method: 'eth_chainId' });
-            setChainId(updatedChain);
-          } catch (netErr) {
-            console.warn("Could not switch to Hardhat network:", netErr);
-          }
+        // By default, let the user also have admin privileges or toggle them
+        if (setIsAdmin) {
+          setIsAdmin(false); // starts as adopter by default, can switch to admin
         }
       } else {
-        // Fallback to demo mode if no MetaMask
-        handleSelectDemo('adopter');
+        setError('MetaMask is not installed in this browser.');
       }
     } catch (err) {
-      console.error(err);
+      console.error("MetaMask connection error:", err);
       setError(err.message || 'Failed to connect MetaMask');
     } finally {
       setLoading(false);
@@ -55,6 +48,9 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
       const { account: demoAcc, chainId: demoChain } = connectDemoWallet(role);
       setAccount(demoAcc);
       setChainId(demoChain);
+      if (setIsAdmin) {
+        setIsAdmin(role === 'admin');
+      }
       setError(null);
       setShowDemoMenu(false);
     } catch (err) {
@@ -63,19 +59,20 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
     }
   };
 
-  const handleSwitchDemoRole = () => {
-    if (isDemoAdmin) {
-      handleSelectDemo('adopter');
+  const handleToggleAdminRole = () => {
+    if (isDemoMode) {
+      handleSelectDemo(isAdmin ? 'adopter' : 'admin');
     } else {
-      handleSelectDemo('admin');
+      // For real MetaMask account, toggle admin role
+      if (setIsAdmin) {
+        setIsAdmin(!isAdmin);
+      }
     }
   };
 
   useEffect(() => {
     if (window.ethereum) {
       const handleAccounts = (accounts) => {
-        // Do not override account if user is in Demo Mode
-        if (isDemoMode) return;
         if (accounts.length > 0) {
           setAccount(accounts[0]);
         } else {
@@ -84,9 +81,7 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
       };
 
       const handleChain = (newChainId) => {
-        if (!isDemoMode) {
-          setChainId(newChainId);
-        }
+        setChainId(newChainId);
       };
 
       window.ethereum.on('accountsChanged', handleAccounts);
@@ -99,25 +94,36 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
         }
       };
     }
-  }, [setAccount, setChainId, isDemoMode]);
-
-  const isWrongNetwork = account && hasMetaMask && !isDemoMode && chainId && chainId !== HARDHAT_CHAIN_ID;
+  }, [setAccount, setChainId]);
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', position: 'relative' }}>
-      {isWrongNetwork && (
-        <button 
-          onClick={switchToHardhatNetwork}
-          className="btn btn-danger btn-sm"
-          title="Switch to Hardhat Localhost Network (31337)"
-        >
-          <ShieldAlert size={16} /> Switch to Hardhat Network
-        </button>
-      )}
-
       {!account ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {/* Quick Demo Mode Buttons */}
+          {/* MetaMask Connect Button */}
+          {hasMetaMask ? (
+            <button 
+              onClick={handleConnectMetaMask} 
+              disabled={loading} 
+              className="btn btn-primary btn-sm"
+              style={{ background: 'linear-gradient(135deg, #f97316, #ea580c)', boxShadow: '0 4px 14px rgba(249, 115, 22, 0.35)' }}
+            >
+              <Wallet size={16} />
+              {loading ? 'Connecting...' : 'Connect MetaMask'}
+            </button>
+          ) : (
+            <a 
+              href="https://metamask.io/download/" 
+              target="_blank" 
+              rel="noreferrer" 
+              className="btn btn-secondary btn-sm"
+              style={{ fontSize: '0.8rem', opacity: 0.9 }}
+            >
+              <ExternalLink size={12} /> Install MetaMask
+            </a>
+          )}
+
+          {/* Quick Demo Mode Dropdown */}
           <div style={{ position: 'relative' }}>
             <button 
               onClick={() => setShowDemoMenu(!showDemoMenu)} 
@@ -162,61 +168,25 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
               </div>
             )}
           </div>
-
-          {/* MetaMask Connect */}
-          {hasMetaMask ? (
-            <button 
-              onClick={handleConnect} 
-              disabled={loading} 
-              className="btn btn-primary btn-sm"
-            >
-              <Wallet size={16} />
-              {loading ? 'Connecting...' : 'Connect MetaMask'}
-            </button>
-          ) : (
-            <a 
-              href="https://metamask.io/download/" 
-              target="_blank" 
-              rel="noreferrer" 
-              className="btn btn-secondary btn-sm"
-              style={{ fontSize: '0.8rem', opacity: 0.8 }}
-            >
-              <ExternalLink size={12} /> Install MetaMask
-            </a>
-          )}
         </div>
       ) : (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {/* Active Demo Role pill with 1-click Switch */}
-          {isDemoMode && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <button 
-                onClick={handleSwitchDemoRole}
-                className="btn btn-secondary btn-sm"
-                title={isDemoAdmin ? "Switch to Demo Adopter" : "Switch to Demo Admin"}
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '0.3rem 0.65rem',
-                  borderColor: isDemoAdmin ? 'rgba(245, 158, 11, 0.4)' : 'rgba(56, 189, 248, 0.4)',
-                  background: isDemoAdmin ? 'rgba(245, 158, 11, 0.15)' : 'rgba(56, 189, 248, 0.15)',
-                  color: isDemoAdmin ? '#fbbf24' : '#38bdf8'
-                }}
-              >
-                {isDemoAdmin ? '👑 Admin (Switch to 🐶 Adopter)' : '🐶 Adopter (Switch to 👑 Admin)'}
-              </button>
-
-              {onDemoReset && (
-                <button
-                  onClick={onDemoReset}
-                  className="btn btn-secondary btn-sm"
-                  title="Reset Demo Data to Initial Seeds"
-                  style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
-                >
-                  <RefreshCw size={12} /> Reset
-                </button>
-              )}
-            </div>
-          )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* Role Switcher Button for currently connected wallet */}
+          <button 
+            onClick={handleToggleAdminRole}
+            className="btn btn-secondary btn-sm"
+            title={isAdmin ? "Switch to Adopter Mode to browse and request adoption" : "Switch to Admin Mode to review and approve adoption requests"}
+            style={{
+              fontSize: '0.8rem',
+              padding: '0.3rem 0.7rem',
+              borderColor: isAdmin ? 'rgba(245, 158, 11, 0.5)' : 'rgba(56, 189, 248, 0.5)',
+              background: isAdmin ? 'rgba(245, 158, 11, 0.18)' : 'rgba(56, 189, 248, 0.18)',
+              color: isAdmin ? '#fbbf24' : '#38bdf8',
+              fontWeight: 600
+            }}
+          >
+            {isAdmin ? '👑 Shelter Admin Mode (Switch to 🐶 Adopter)' : '🐶 Adopter Mode (Switch to 👑 Admin)'}
+          </button>
 
           {/* Connected Address Indicator */}
           <div style={{ 
@@ -229,7 +199,9 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
             border: '1px solid rgba(255,255,255,0.1)' 
           }}>
             <CheckCircle2 size={14} color="#10b981" />
-            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{formatAddress(account)}</span>
+            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+              {!isDemoMode ? `🦊 ${formatAddress(account)}` : formatAddress(account)}
+            </span>
             {isAdmin && <span className="admin-badge">ADMIN</span>}
             
             <button 
@@ -240,6 +212,17 @@ export default function WalletConnect({ account, setAccount, chainId, setChainId
               &times;
             </button>
           </div>
+
+          {onDemoReset && (
+            <button
+              onClick={onDemoReset}
+              className="btn btn-secondary btn-sm"
+              title="Reset Demo Records back to initial seed data"
+              style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
+            >
+              <RefreshCw size={12} /> Reset
+            </button>
+          )}
         </div>
       )}
 

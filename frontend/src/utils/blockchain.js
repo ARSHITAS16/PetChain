@@ -1,6 +1,6 @@
 import { ethers } from 'ethers';
-import contractAddressData from '../contracts/contract-address.json' with { type: 'json' };
-import contractArtifact from '../contracts/PetChain.json' with { type: 'json' };
+import contractAddressData from '../contracts/contract-address.json';
+import contractArtifact from '../contracts/PetChain.json';
 
 export const HARDHAT_CHAIN_ID = '0x7a69'; // 31337 in hex
 export const HARDHAT_RPC_URL = 'http://127.0.0.1:8545';
@@ -189,22 +189,8 @@ function generateTxHash() {
   return hash;
 }
 
-let inMemoryState = null;
-
 export const demoStore = {
   getState() {
-    if (typeof localStorage === 'undefined') {
-      if (!inMemoryState) {
-        inMemoryState = {
-          pets: JSON.parse(JSON.stringify(INITIAL_DEMO_PETS)),
-          requests: JSON.parse(JSON.stringify(INITIAL_DEMO_REQUESTS)),
-          ownership: JSON.parse(JSON.stringify(INITIAL_DEMO_OWNERSHIP)),
-          vaccinations: JSON.parse(JSON.stringify(INITIAL_DEMO_VACCINATIONS))
-        };
-      }
-      return inMemoryState;
-    }
-
     try {
       const stored = localStorage.getItem(DEMO_STORAGE_KEY);
       if (stored) {
@@ -214,22 +200,18 @@ export const demoStore = {
       console.warn("Error reading demo storage, initializing fresh state", e);
     }
     const initialState = {
-      pets: JSON.parse(JSON.stringify(INITIAL_DEMO_PETS)),
-      requests: JSON.parse(JSON.stringify(INITIAL_DEMO_REQUESTS)),
-      ownership: JSON.parse(JSON.stringify(INITIAL_DEMO_OWNERSHIP)),
-      vaccinations: JSON.parse(JSON.stringify(INITIAL_DEMO_VACCINATIONS))
+      pets: INITIAL_DEMO_PETS,
+      requests: INITIAL_DEMO_REQUESTS,
+      ownership: INITIAL_DEMO_OWNERSHIP,
+      vaccinations: INITIAL_DEMO_VACCINATIONS
     };
     try {
       localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(initialState));
-    } catch (e) {}
+    } catch (e) { }
     return initialState;
   },
 
   saveState(state) {
-    if (typeof localStorage === 'undefined') {
-      inMemoryState = state;
-      return;
-    }
     try {
       localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(state));
     } catch (e) {
@@ -239,10 +221,10 @@ export const demoStore = {
 
   reset() {
     const initialState = {
-      pets: JSON.parse(JSON.stringify(INITIAL_DEMO_PETS)),
-      requests: JSON.parse(JSON.stringify(INITIAL_DEMO_REQUESTS)),
-      ownership: JSON.parse(JSON.stringify(INITIAL_DEMO_OWNERSHIP)),
-      vaccinations: JSON.parse(JSON.stringify(INITIAL_DEMO_VACCINATIONS))
+      pets: INITIAL_DEMO_PETS,
+      requests: INITIAL_DEMO_REQUESTS,
+      ownership: INITIAL_DEMO_OWNERSHIP,
+      vaccinations: INITIAL_DEMO_VACCINATIONS
     };
     this.saveState(initialState);
     return initialState;
@@ -302,9 +284,9 @@ export const demoStore = {
     const appAddress = applicant || ADOPTER_ADDRESS;
     // Check if user already has an active pending request
     const existing = state.requests.find(
-      r => Number(r.petId) === Number(petId) && 
-      r.applicant.toLowerCase() === appAddress.toLowerCase() && 
-      Number(r.status) === 0
+      r => Number(r.petId) === Number(petId) &&
+        r.applicant.toLowerCase() === appAddress.toLowerCase() &&
+        Number(r.status) === 0
     );
     if (existing) {
       throw new Error("PetChain: Adoption request already submitted for this pet");
@@ -468,9 +450,13 @@ export const demoStore = {
  * In-memory simulation contract providing standard PetChain interface
  */
 export class SimulatedContract {
-  constructor(role = 'adopter') {
+  constructor(role = 'adopter', customAccount = null) {
     this.role = role;
-    this.currentAccount = role === 'admin' ? ADMIN_ADDRESS : ADOPTER_ADDRESS;
+    if (customAccount) {
+      this.currentAccount = customAccount;
+    } else {
+      this.currentAccount = role === 'admin' ? ADMIN_ADDRESS : ADOPTER_ADDRESS;
+    }
   }
 
   async admin() {
@@ -512,7 +498,7 @@ export class SimulatedContract {
   }
 
   async approveAdoption(petId, requestIndex) {
-    return demoStore.approveAdoption(petId, requestIndex);
+    return demoStore.approveAdoption(petId, requestIndex, this.currentAccount);
   }
 
   async rejectAdoption(petId, requestIndex) {

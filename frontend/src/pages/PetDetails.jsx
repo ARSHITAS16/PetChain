@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Heart, Shield, Syringe, History, CheckCircle, Clock, Calendar, User, Check } from 'lucide-react';
+import { ArrowLeft, Heart, Shield, Syringe, History, CheckCircle, Clock, Calendar, User, Check, X, FileText } from 'lucide-react';
 import { 
   formatAddress, 
   formatTimestamp, 
@@ -9,7 +9,7 @@ import {
 import OwnershipHistory from '../components/OwnershipHistory';
 import VaccinationForm from '../components/VaccinationForm';
 
-export default function PetDetails({ petId, onBack, onRequestAdoption, userAccount, isAdmin, onAddVaccination, loadingTx }) {
+export default function PetDetails({ petId, onBack, onRequestAdoption, onApproveAdoption, onRejectAdoption, userAccount, isAdmin, onAddVaccination, loadingTx }) {
   const [pet, setPet] = useState(null);
   const [vaccinations, setVaccinations] = useState([]);
   const [history, setHistory] = useState([]);
@@ -73,6 +73,8 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
     userAccount && 
     adoptionRequests.some(r => r.applicant && r.applicant.toLowerCase() === userAccount.toLowerCase() && Number(r.status) === 0)
   );
+
+  const pendingRequestsForThisPet = adoptionRequests.filter(r => Number(r.status) === 0);
 
   return (
     <div>
@@ -138,6 +140,47 @@ export default function PetDetails({ petId, onBack, onRequestAdoption, userAccou
               )}
             </div>
           </div>
+
+          {/* Admin Pending Adoption Approval Box on Pet Page */}
+          {isAdmin && !pet.isAdopted && pendingRequestsForThisPet.length > 0 && (
+            <div className="card" style={{ border: '1px solid rgba(245, 158, 11, 0.3)', background: 'rgba(245, 158, 11, 0.05)' }}>
+              <h4 style={{ color: '#fbbf24', fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Shield size={16} /> Shelter Admin Actions ({pendingRequestsForThisPet.length} pending)
+              </h4>
+              <p style={{ fontSize: '0.85rem', color: '#9ca3af', marginBottom: '1rem' }}>
+                Review applicant notes and approve adoption for {pet.name}:
+              </p>
+
+              {pendingRequestsForThisPet.map((req, idx) => (
+                <div key={idx} style={{ background: 'rgba(0,0,0,0.3)', padding: '0.85rem', borderRadius: '8px', marginBottom: '0.75rem', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, color: '#38bdf8', marginBottom: '0.35rem' }}>
+                    Applicant: {formatAddress(req.applicant)}
+                  </div>
+                  {req.applicantNotes && (
+                    <div style={{ fontSize: '0.82rem', color: '#d1d5db', fontStyle: 'italic', marginBottom: '0.75rem' }}>
+                      "{req.applicantNotes}"
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => onApproveAdoption && onApproveAdoption(Number(pet.petId), idx)}
+                      disabled={loadingTx}
+                      className="btn btn-success btn-sm"
+                    >
+                      <Check size={14} /> Approve Adoption
+                    </button>
+                    <button 
+                      onClick={() => onRejectAdoption && onRejectAdoption(Number(pet.petId), idx)}
+                      disabled={loadingTx}
+                      className="btn btn-danger btn-sm"
+                    >
+                      <X size={14} /> Reject
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Right Column: Detailed Info, Vaccination & History */}
